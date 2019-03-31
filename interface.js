@@ -40,8 +40,9 @@ async function total_supply() {
 }
 
 async function mint(tokens) {
+  tokens *= ATS_multiplier;
   var promise = new Promise(function(resolve, reject) {
-    ATS.mint(tokens * ATS_multiplier, (error, value) => { if (error) reject(error); else resolve(value); });
+    ATS.mint(tokens, (error, value) => { if (error) reject(error); else resolve(value); });
   });
   return await promise;
 }
@@ -49,6 +50,18 @@ async function mint(tokens) {
 async function is_yeeter(walletAddress = get_wallet()) {
   var promise = new Promise(function(resolve, reject) {
     ATS.isYeeter(walletAddress, (error, value) => { if (error) reject(error); else resolve(value); });
+  });
+  return await promise;
+}
+
+async function transfer(target, amount) {
+  if (!target || target == "")
+    return Promise.reject("empty address");
+
+  amount *= ATS_multiplier;
+
+  var promise = new Promise(function(resolve, reject) {
+    ATS.transfer(target, amount, (error, value) => { if (error) reject(error); else resolve(value); });
   });
   return await promise;
 }
@@ -63,4 +76,10 @@ async function yeet() {
   else {
     alert("You made the right choice");
   }
+}
+
+function make_qr_string(destination, amount) {
+  amount *= ATS_multiplier;
+  amount = Math.floor(amount);
+  return `ethereum:${ATS_ADDR}/transfer?address=${destination}&uint256=${amount}`
 }
