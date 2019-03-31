@@ -118,8 +118,6 @@
                 <tr>
                     <th scope="col">Time</th>
                     <th scope="col">Direction</th>
-<!--                    <th scope="col">From</th>
-                    <th scope="col">To</th>-->
                     <th scope="col">Value</th>
                 </tr>
             </thead>
@@ -143,7 +141,7 @@
                     var elem = document.createElement("tr");
                     var blocktime = new Date(block.timestamp * 1000).toLocaleString();
 
-                    var tx_value = ats_format_value(value.args.value / 100);
+                    var tx_value = format_ats_value(value.args.value / 100);
                     var direction;
 
                     if (value.args.from == get_wallet()) {
@@ -156,13 +154,9 @@
                     }
                     else return;
 
-                    tx_val
-
                     elem.innerHTML = `
                         <th scope="row">${blocktime}</th>
                         <th scope="row">${direction}</th>
-                        <!--<td>${value.args.from}</td>-->
-                        <!--<td>${value.args.to}</td>-->
                         <td>${tx_value}</td>
                     `
                     console.log(elem.innerHTML);
