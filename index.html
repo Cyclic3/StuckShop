@@ -11,6 +11,14 @@
   <body>
     <h1 style="text-align: center">StuckShop</h1>
     <main role="main" class="container" style="position:relative; top:20px; width:75%">
+      <div id="get-more" style="visibilty:none">
+        You are running low on ether
+      </div>
+      <script>
+        if true//(ether_low())
+          document.getElementById("get-more").style.visibility = "block";
+      </script>
+
       <p>You have £<b id="n_tokens"></b> out of £<b id="total_tokens"></b> in circulation.</p>
       <p>You <b id="yeeter"></b> a yeeter.</p>
 
@@ -106,21 +114,30 @@
       </table>
 
       <script>
+        var tx_hashes = new Set();
         ATS.Transfer().watch(function(error, value) {
-          //TODO: highlight transactions involving us
+          // Check this is a new transaction
+          // JS is single threaded, so this is OK
+          if (tx_hashes.has(value.transactionHash))
+            return;
+          tx_hashes.add(value.transactionHash);
+
           web3.eth.getBlock(value.blockHash, function(error, block) {
             if (error) throw error;
             else console.log(value);
 
             var elem = document.createElement("tr");
             var blocktime = new Date(block.timestamp * 1000).toLocaleString();
+
+            if (value.args.from == get_wallet()) elem.classList.add("table-danger");
+            else if (value.args.to == get_wallet()) elem.classList.add("table-success");
             elem.innerHTML = `
-              <tr>
-                <th scope="row">${blocktime}</th>
-                <td>${value.args.from}</td>
-                <td>${value.args.to}</td>
-                <td>${value.args.value}</td>
-              </tr>`
+              <th scope="row">${blocktime}</th>
+              <td>${value.args.from}</td>
+              <td>${value.args.to}</td>
+              <td>${value.args.value}</td>
+            `
+            console.log(elem.innerHTML);
             document.getElementById("transactions").prepend(elem);
           });
         })

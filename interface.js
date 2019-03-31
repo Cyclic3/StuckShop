@@ -61,7 +61,7 @@ async function transfer(target, amount) {
   amount *= ATS_multiplier;
 
   var promise = new Promise(function(resolve, reject) {
-    ATS.transfer(target, amount, (error, value) => { if (error) reject(error); else resolve(value); });
+    ATS.transfer(target, amount, { gasPrice:"10e9" }, (error, value) => { if (error) reject(error); else resolve(value); });
   });
   return await promise;
 }
