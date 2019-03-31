@@ -55,7 +55,9 @@
           elem.innerHTML = "";
           new QRCode(document.getElementById("qrcode"), {
             text: make_qr_string(to, amount),
-            correctLevel : QRCode.CorrectLevel.H
+            correctLevel : QRCode.CorrectLevel.H,
+            height: 512,
+            width: 512,
           });
           // Fix QR code scaling
           elem = elem.children[1];
@@ -85,6 +87,43 @@
         ATS.YeeterAdded().watch(function() { update_yeet_all(); });
         ATS.YeeterRemoved().watch(function() { update_yeet_all(); });
         update_yeet_all();
+      </script>
+
+      <br>
+      <h3>Transactions</h3>
+
+      <table class="table">
+        <thread>
+          <tr>
+            <th scope="col">Time</th>
+            <th scope="col">From</th>
+            <th scope="col">To</th>
+            <th scope="col">Value</th>
+          </tr>
+        </thead>
+        <tbody id="transactions">
+        </tbody>
+      </table>
+
+      <script>
+        ATS.Transfer().watch(function(error, value) {
+          //TODO: highlight transactions involving us
+          web3.eth.getBlock(value.blockHash, function(error, block) {
+            if (error) throw error;
+            else console.log(value);
+
+            var elem = document.createElement("tr");
+            var blocktime = new Date(block.timestamp * 1000).toLocaleString();
+            elem.innerHTML = `
+              <tr>
+                <th scope="row">${blocktime}</th>
+                <td>${value.args.from}</td>
+                <td>${value.args.to}</td>
+                <td>${value.args.value}</td>
+              </tr>`
+            document.getElementById("transactions").prepend(elem);
+          });
+        })
       </script>
     </main>
   </body>
