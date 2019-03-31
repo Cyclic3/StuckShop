@@ -25,6 +25,10 @@ function get_wallet(index = 0) {
   return account = web3.eth.accounts[index];
 }
 
+function format_ats_value(value) {
+  return '£' + value.toFixed(2);
+}
+
 async function get_balance(walletAddress = get_wallet()) {
   var promise = new Promise(function(resolve, reject) {
     ATS.balanceOf(walletAddress, (error, value) => { if (error) reject(error); else resolve(value); });
@@ -50,6 +54,13 @@ async function mint(tokens) {
 async function is_yeeter(walletAddress = get_wallet()) {
   var promise = new Promise(function(resolve, reject) {
     ATS.isYeeter(walletAddress, (error, value) => { if (error) reject(error); else resolve(value); });
+  });
+  return await promise;
+}
+
+async function add_yeeter(walletAddress) {
+  var promise = new Promise(function(resolve, reject) {
+    ATS.addYeeter(walletAddress, (error, value) => { if (error) reject(error); else resolve(value); });
   });
   return await promise;
 }

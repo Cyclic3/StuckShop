@@ -10,148 +10,168 @@
   </head>
   <body>
     <h1 style="text-align: center">StuckShop</h1>
-    <main role="main" class="container" style="position:relative; top:20px; width:75%">
-      <div id="get-more" class="modal fade">
-        <div class="modal-dialog">
-          <div class="modal-content bg-danger">
-            <div class="modal-body">
-              You are running low on ether. Get some more
-              <a href="https://faucet.metamask.io/">here</a> or <a style="display: inline" href="https://faucet.ropsten.be/">here</a>
-            </div>
-            <div class="modal-footer">
-              A lack of ether will mean that your transactions will fail,
-              and so you won't be able to buy anything.
+    <main role="main" class="container" style="position:relative; top:20px">
+      <div class="row">
+        <div class="col-8">
+          <div id="get-more" class="modal fade">
+            <div class="modal-dialog">
+                <div class="modal-content bg-danger">
+                    <div class="modal-body">
+                        You are running low on ether. Get some more
+                        <a href="https://faucet.metamask.io/">here</a> or <a style="display: inline" href="https://faucet.ropsten.be/">here</a>
+                    </div>
+                    <div class="modal-footer">
+                        A lack of ether will mean that your transactions will fail,
+                        and so you won't be able to buy anything.
+                    </div>
+                </div>
             </div>
           </div>
-        </div>
-      </div>
-      <script>
-        ether_low().then(function(is_low) { if (is_low) $("#get-more").modal(); });
-      </script>
+          <script>
+            ether_low().then(function(is_low) { if (is_low) $("#get-more").modal(); });
+          </script>
 
-      <p>You have £<b id="n_tokens"></b> out of £<b id="total_tokens"></b> in circulation.</p>
-      <p>You <b id="yeeter"></b> a yeeter.</p>
+          <p>You have <b id="n_tokens"></b> out of <b id="total_tokens"></b> in circulation.</p>
+          <p>You <b id="yeeter"></b> a yeeter.</p>
 
-      <script>
-        function update_balance() { get_balance().then(function (b) { document.getElementById("n_tokens").innerHTML = b.toFixed(2); });}
-        function update_total() { total_supply().then(function (b) { document.getElementById("total_tokens").innerHTML = b.toFixed(2); });}
-        function update_all() { update_balance(); update_total(); }
-        ATS.Transfer().watch(function() { update_all(); });
-        update_all();
-      </script>
-      <div class="input-group">
-        <div class="input-group-prepend">
-          <span class="input-group-text">£</span>
-        </div>
-        <input id="ats-n_tokens" type="number" step="0.01" class="form-control">
-        <div class="input-group-append">
-          <button class="btn btn-outline-primary" onclick="get_balance().then(function(n) {document.getElementById('ats-n_tokens').value = n; })">All mine</span>
-          <button class="btn btn-outline-primary" onclick="get_balance(document.getElementById('ats-target').value).then(function(n) {document.getElementById('ats-n_tokens').value = n; })">All from target</span>
-        </div>
-      </div>
-      <div class="input-group">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Target</span>
-        </div>
-        <input id="ats-target" class="form-control">
-        <div class="input-group-append">
-          <button class="btn btn-outline-primary" onclick="document.getElementById('ats-target').value = ATS_TUCKSHOP">Tuck Shop</span>
-          <button class="btn btn-outline-primary" onclick="document.getElementById('ats-target').value = get_wallet()">Me</span>
-          <button class="btn btn-outline-primary" onclick="document.getElementById('ats-target').value = ATS_ME">Harlan</span>
-          <button class="btn btn-outline-danger" onclick="document.getElementById('ats-target').value = ATS_BURN">Burn</span>
-        </div>
-      </div>
-
-      <button onclick="transfer(document.getElementById('ats-target').value, document.getElementById('ats-n_tokens').value)" class="btn btn-success btn-block">Transfer</button>
-
-
-      <script>
-        function gen_request() {
-          var to = document.getElementById('ats-target').value;
-          var amount = document.getElementById('ats-n_tokens').value;
-          var elem = document.getElementById("qrcode");
-          elem.innerHTML = "";
-          new QRCode(document.getElementById("qrcode"), {
-            text: make_qr_string(to, amount),
-            correctLevel : QRCode.CorrectLevel.H,
-            height: 512,
-            width: 512,
-          });
-          // Fix QR code scaling
-          elem = elem.children[1];
-          elem.style.width = "100%"
-          elem.style.height = "100%"
-        }
-      </script>
-
-      <div id="qrcode-modal" class="modal fade">
-        <div class="modal-dialog">
-          <div class="modal-content" id="qrcode">
+          <script>
+            function update_balance() { get_balance().then(function (b) { document.getElementById("n_tokens").innerHTML = format_ats_value(b); });}
+            function update_total() { total_supply().then(function (b) { document.getElementById("total_tokens").innerHTML = format_ats_value(b); });}
+            function update_all() { update_balance(); update_total(); }
+            ATS.Transfer().watch(function() { update_all(); });
+            update_all();
+          </script>
+          <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">£</span>
+            </div>
+            <input id="ats-n_tokens" type="number" step="0.01" class="form-control">
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" onclick="get_balance().then(function(n) {document.getElementById('ats-n_tokens').value = n; })">All mine</span>
+                <button class="btn btn-outline-primary" onclick="get_balance(document.getElementById('ats-target').value).then(function(n) {document.getElementById('ats-n_tokens').value = n; })">All from target</span>
+            </div>
           </div>
+          <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Target</span>
+            </div>
+            <input id="ats-target" class="form-control">
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" onclick="document.getElementById('ats-target').value = ATS_TUCKSHOP">Tuck Shop</span>
+                <button class="btn btn-outline-primary" onclick="document.getElementById('ats-target').value = get_wallet()">Me</span>
+                <button class="btn btn-outline-primary" onclick="document.getElementById('ats-target').value = ATS_ME">Harlan</span>
+                <button class="btn btn-outline-danger" onclick="document.getElementById('ats-target').value = ATS_BURN">Burn</span>
+            </div>
+          </div>
+
+          <button onclick="transfer(document.getElementById('ats-target').value, document.getElementById('ats-n_tokens').value)" class="btn btn-success btn-block">Transfer</button>
+
+
+          <script>
+            function gen_request() {
+                var to = document.getElementById('ats-target').value;
+                var amount = document.getElementById('ats-n_tokens').value;
+                var elem = document.getElementById("qrcode");
+                elem.innerHTML = "";
+                new QRCode(document.getElementById("qrcode"), {
+                    text: make_qr_string(to, amount),
+                    correctLevel : QRCode.CorrectLevel.H,
+                    height: 512,
+                    width: 512,
+                });
+                // Fix QR code scaling
+                elem = elem.children[1];
+                elem.style.width = "100%"
+                elem.style.height = "100%"
+            }
+          </script>
+
+          <div id="qrcode-modal" class="modal fade">
+            <div class="modal-dialog">
+                <div class="modal-content" id="qrcode">
+                </div>
+            </div>
+          </div>
+          <button onclick="gen_request()" class="btn btn-primary btn-block" data-toggle="modal" data-target="#qrcode-modal">Request</button>
+
+          <br>
+
+          <div id="yeeter-only" style="display:none">
+            <button onclick="mint(document.getElementById('ats-n_tokens').value)" class="btn btn-primary btn-block">Mint</button>
+            <button onclick="add_yeeter(document.getElementById('ats-target').value)" class="btn btn-danger btn-warn btn-block">Add yeeter</button>
+            <button onclick="yeet()" class="btn btn-danger btn-block">Yeet</button>
+          </div>
+          <script>
+            function update_is_yeeter() { total_supply().then(function (b) { document.getElementById("yeeter").innerHTML = is_yeeter() ? "are" : "aren't"; });}
+            function update_yeeter_only() { total_supply().then(function (b) { document.getElementById("yeeter-only").style.display = is_yeeter() ? "block" : "none"; });}
+            function update_yeet_all() { update_is_yeeter(); update_yeeter_only(); }
+            ATS.YeeterAdded().watch(function() { update_yeet_all(); });
+            ATS.YeeterRemoved().watch(function() { update_yeet_all(); });
+            update_yeet_all();
+          </script>
+        </div>
+        <div class="col-4">
+          <h3>Transactions</h3>
+
+          <table class="table">
+            <thread>
+                <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">Direction</th>
+<!--                    <th scope="col">From</th>
+                    <th scope="col">To</th>-->
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody id="transactions">
+            </tbody>
+          </table>
+
+          <script>
+            var tx_hashes = new Set();
+            ATS.Transfer().watch(function(error, value) {
+                // Check this is a new transaction
+                // JS is single threaded, so this is OK
+                if (tx_hashes.has(value.transactionHash))
+                    return;
+                tx_hashes.add(value.transactionHash);
+
+                web3.eth.getBlock(value.blockHash, function(error, block) {
+                    if (error) throw error;
+                    else console.log(value);
+
+                    var elem = document.createElement("tr");
+                    var blocktime = new Date(block.timestamp * 1000).toLocaleString();
+
+                    var tx_value = ats_format_value(value.args.value / 100);
+                    var direction;
+
+                    if (value.args.from == get_wallet()) {
+                      elem.classList.add("table-danger");
+                      direction = "Out";
+                    }
+                    else if (value.args.to == get_wallet()) {
+                      elem.classList.add("table-success");
+                      direction = "In";
+                    }
+                    else return;
+
+                    tx_val
+
+                    elem.innerHTML = `
+                        <th scope="row">${blocktime}</th>
+                        <th scope="row">${direction}</th>
+                        <!--<td>${value.args.from}</td>-->
+                        <!--<td>${value.args.to}</td>-->
+                        <td>${tx_value}</td>
+                    `
+                    console.log(elem.innerHTML);
+                    document.getElementById("transactions").prepend(elem);
+                });
+            })
+          </script>
         </div>
       </div>
-      <button onclick="gen_request()" class="btn btn-primary btn-block" data-toggle="modal" data-target="#qrcode-modal">Request</button>
-
-      <br>
-
-      <div id="yeeter-only" style="display:none">
-        <button onclick="mint(document.getElementById('ats-n_tokens').value)" class="btn btn-warning btn-block">Mint</button>
-        <button onclick="yeet()" class="btn btn-danger btn-block">Yeet</button>
-      </div>
-      <script>
-        function update_is_yeeter() { total_supply().then(function (b) { document.getElementById("yeeter").innerHTML = is_yeeter() ? "are" : "aren't"; });}
-        function update_yeeter_only() { total_supply().then(function (b) { document.getElementById("yeeter-only").style.display = is_yeeter() ? "block" : "none"; });}
-        function update_yeet_all() { update_is_yeeter(); update_yeeter_only(); }
-        ATS.YeeterAdded().watch(function() { update_yeet_all(); });
-        ATS.YeeterRemoved().watch(function() { update_yeet_all(); });
-        update_yeet_all();
-      </script>
-
-      <br>
-      <h3>Transactions</h3>
-
-      <table class="table">
-        <thread>
-          <tr>
-            <th scope="col">Time</th>
-            <th scope="col">From</th>
-            <th scope="col">To</th>
-            <th scope="col">Value</th>
-          </tr>
-        </thead>
-        <tbody id="transactions">
-        </tbody>
-      </table>
-
-      <script>
-        var tx_hashes = new Set();
-        ATS.Transfer().watch(function(error, value) {
-          // Check this is a new transaction
-          // JS is single threaded, so this is OK
-          if (tx_hashes.has(value.transactionHash))
-            return;
-          tx_hashes.add(value.transactionHash);
-
-          web3.eth.getBlock(value.blockHash, function(error, block) {
-            if (error) throw error;
-            else console.log(value);
-
-            var elem = document.createElement("tr");
-            var blocktime = new Date(block.timestamp * 1000).toLocaleString();
-
-            if (value.args.from == get_wallet()) elem.classList.add("table-danger");
-            else if (value.args.to == get_wallet()) elem.classList.add("table-success");
-            elem.innerHTML = `
-              <th scope="row">${blocktime}</th>
-              <td>${value.args.from}</td>
-              <td>${value.args.to}</td>
-              <td>${value.args.value}</td>
-            `
-            console.log(elem.innerHTML);
-            document.getElementById("transactions").prepend(elem);
-          });
-        })
-      </script>
     </main>
   </body>
 </html>
