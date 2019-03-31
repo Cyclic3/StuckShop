@@ -11,12 +11,22 @@
   <body>
     <h1 style="text-align: center">StuckShop</h1>
     <main role="main" class="container" style="position:relative; top:20px; width:75%">
-      <div id="get-more" style="visibilty:none">
-        You are running low on ether
+      <div id="get-more" class="modal fade">
+        <div class="modal-dialog">
+          <div class="modal-content bg-danger">
+            <div class="modal-body">
+              You are running low on ether. Get some more
+              <a href="https://faucet.metamask.io/">here</a> or <a style="display: inline" href="https://faucet.ropsten.be/">here</a>
+            </div>
+            <div class="modal-footer">
+              A lack of ether will mean that your transactions will fail,
+              and so you won't be able to buy anything.
+            </div>
+          </div>
+        </div>
       </div>
       <script>
-        if true//(ether_low())
-          document.getElementById("get-more").style.visibility = "block";
+        ether_low().then(function(is_low) { if (is_low) $("#get-more").modal(); });
       </script>
 
       <p>You have £<b id="n_tokens"></b> out of £<b id="total_tokens"></b> in circulation.</p>

@@ -83,3 +83,13 @@ function make_qr_string(destination, amount) {
   amount = Math.floor(amount);
   return `ethereum:${ATS_ADDR}/transfer?address=${destination}&uint256=${amount}`
 }
+
+async function ether_low(walletAddress = get_wallet()) {
+  var promise = new Promise(function(resolve, reject) {
+     web3.eth.getBalance(walletAddress, (error, value) => {
+       if (error) reject(error); else resolve(value/1e18 <= ATS_LOW);
+     });
+  });
+
+  return await promise;
+}
