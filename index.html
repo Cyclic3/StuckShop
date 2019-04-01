@@ -33,6 +33,7 @@
 
           <p>You have <b id="n_tokens"></b> out of <b id="total_tokens"></b> in circulation.</p>
           <p>You <b id="yeeter"></b> a yeeter.</p>
+          <p>Average block time is currently <b id="blocktime">~30</b> seconds.</p>
 
           <script>
             function update_balance() { get_balance().then(function (b) { document.getElementById("n_tokens").innerHTML = format_ats_value(b); });}
@@ -40,6 +41,27 @@
             function update_all() { update_balance(); update_total(); }
             ATS.Transfer().watch(function() { update_all(); });
             update_all();
+          </script>
+
+          <script>
+            web3.eth.filter('latest', function(error, block) {
+              update_blocktime(block).then(function(time) { document.getElementById("blocktime").innerHTML = time;
+            })});
+
+            async function init_blocktime() {
+              var promise = new Promise(function(resolve, reject) {
+                web3.eth.getBlockNumber((error, value) => {
+                  if (error) reject(error); else resolve(value);
+                });
+              });
+
+              var latest = await promise;
+              for (var i = latest - 20; i <= latest; ++i) {
+                document.getElementById("blocktime").innerHTML = await update_blocktime(i);
+              }
+            }
+
+            init_blocktime();
           </script>
           <div class="input-group">
             <div class="input-group-prepend">
@@ -136,7 +158,6 @@
 
                 web3.eth.getBlock(value.blockHash, function(error, block) {
                     if (error) throw error;
-                    else console.log(value);
 
                     var elem = document.createElement("tr");
                     var blocktime = new Date(block.timestamp * 1000).toLocaleString();
@@ -159,7 +180,6 @@
                         <th scope="row">${direction}</th>
                         <td>${tx_value}</td>
                     `
-                    console.log(elem.innerHTML);
                     document.getElementById("transactions").prepend(elem);
                 });
             })

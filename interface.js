@@ -1,4 +1,6 @@
 window.addEventListener('load', async () => {
+//  window.web3 = new Web3(web3.currentProvider, { transactionConfirmationBlocks: "1" });
+/*
     // Modern dapp browsers...
     if (window.ethereum) {
         window.web3 = new Web3(web3.currentProvider);
@@ -16,6 +18,7 @@ window.addEventListener('load', async () => {
     else {
         console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
     }
+*/
 });
 
 const ATS = web3.eth.contract(ATS_ABI).at(ATS_ADDR);
@@ -72,7 +75,7 @@ async function transfer(target, amount) {
   amount *= ATS_multiplier;
 
   var promise = new Promise(function(resolve, reject) {
-    ATS.transfer(target, amount, { gasPrice:"10e9" }, (error, value) => { if (error) reject(error); else resolve(value); });
+    ATS.transfer(target, amount, { gasPrice:"5e9" }, (error, value) => { if (error) reject(error); else resolve(value); });
   });
   return await promise;
 }
@@ -103,4 +106,57 @@ async function ether_low(walletAddress = get_wallet()) {
   });
 
   return await promise;
+}
+
+var lastBlock = 0;
+var blockTime = 0;
+const blockExpDropoff = 0.85;
+
+async function update_blocktime(blockId) {
+  var promise = new Promise(function(resolve, reject) {
+     web3.eth.getBlock(blockId, (error, value) => {
+       if (error) reject(error); else resolve(value);
+     });
+  });
+  const block = await promise;
+  console.log(`BlockId: ${blockId}`);
+
+  console.log(`Timestamp: ${block.timestamp}`);
+  if (block.timestamp > lastBlock) {
+    if (lastBlock == 0) {
+      lastBlock = block.timestamp;
+      console.log("First block!");
+    }
+    else {
+      var lastBlockTime = block.timestamp - lastBlock;
+      lastBlock = block.timestamp;
+      console.log(lastBlockTime);
+
+      if (blockTime == 0) {
+        blockTime = lastBlockTime;
+        console.log("Second block!");
+      }
+      else {
+        blockTime *= blockExpDropoff;
+        blockTime += (1 - blockExpDropoff) * lastBlockTime;
+      }
+    }
+  }
+  console.log(`Blocktime: ${blockTime}`);
+  return Math.round(blockTime);
+}
+
+async function init_blocktime() {
+  var promise = new Promise(function(resolve, reject) {
+    web3.eth.getBlockNumber((error, value) => {
+      if (error) reject(error); else resolve(value);
+    });
+  });
+
+  var latest = await promise;
+  for (var i = latest - 10; i < latest; ++i) {
+    await update_blocktime(i);
+  }
+
+  return update_blocktime(latest);
 }
