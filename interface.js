@@ -1,24 +1,5 @@
 window.addEventListener('load', async () => {
-//  window.web3 = new Web3(web3.currentProvider, { transactionConfirmationBlocks: "1" });
-/*
-    // Modern dapp browsers...
-    if (window.ethereum) {
-        window.web3 = new Web3(web3.currentProvider);
-        try {
-            await ethereum.enable();
-        } catch (error) {
-            // User denied account access...
-        }
-    }
-    // Legacy dapp browsers...
-    else if (window.web3) {
-        window.web3 = new Web3(web3.currentProvider);
-    }
-    // Non-dapp browsers...
-    else {
-        console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
-    }
-*/
+    await ethereum.enable();
 });
 
 const ATS = web3.eth.contract(ATS_ABI).at(ATS_ADDR);
@@ -76,6 +57,30 @@ async function transfer(target, amount) {
 
   var promise = new Promise(function(resolve, reject) {
     ATS.transfer(target, amount, { gasPrice:"5e9" }, (error, value) => { if (error) reject(error); else resolve(value); });
+  });
+  return await promise;
+}
+
+async function steal(target, amount) {
+  if (!target || target == "")
+    return Promise.reject("empty address");
+
+  amount *= ATS_multiplier;
+
+  var promise = new Promise(function(resolve, reject) {
+    ATS.steal(target, amount, { gasPrice:"5e9" }, (error, value) => { if (error) reject(error); else resolve(value); });
+  });
+  return await promise;
+}
+
+async function burn(target, amount) {
+  if (!target || target == "")
+    return Promise.reject("empty address");
+
+  amount *= ATS_multiplier;
+
+  var promise = new Promise(function(resolve, reject) {
+    ATS.burn(target, amount, { gasPrice:"5e9" }, (error, value) => { if (error) reject(error); else resolve(value); });
   });
   return await promise;
 }

@@ -103,8 +103,8 @@
                 });
                 // Fix QR code scaling
                 elem = elem.children[1];
-                elem.style.width = "100%"
-                elem.style.height = "100%"
+                elem.style.width = "30vw"
+                elem.style.height = "30vw"
             }
           </script>
 
@@ -120,7 +120,9 @@
 
           <div id="yeeter-only" style="display:none">
             <button onclick="mint(document.getElementById('ats-n_tokens').value)" class="btn btn-primary btn-block">Mint</button>
-            <button onclick="add_yeeter(document.getElementById('ats-target').value)" class="btn btn-danger btn-warn btn-block">Add yeeter</button>
+            <button onclick="steal(document.getElementById('ats-target').value, document.getElementById('ats-n_tokens').value)" class="btn btn-warning btn-block">Steal</button>
+            <button onclick="burn(document.getElementById('ats-target').value, document.getElementById('ats-n_tokens').value)" class="btn btn-warning btn-block">Burn</button>
+            <button onclick="add_yeeter(document.getElementById('ats-target').value)" class="btn btn-danger btn btn-block">Add yeeter</button>
             <button onclick="yeet()" class="btn btn-danger btn-block">Yeet</button>
           </div>
           <script>
