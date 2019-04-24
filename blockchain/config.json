@@ -1,0 +1,15 @@
+{
+  "name": "ATSchain",
+  "engine": {
+    "authorityRound": {
+      "params": {
+        "stepDuration": "3",
+        "blockReward": "420",
+        "validators" : {
+          "safeContract": "69"
+        },
+        "maximumUncleCount": "0"
+      }
+    }
+  }
+}
