@@ -3,32 +3,9 @@ pragma solidity ^0.5.7;
 import 'github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol';
 import 'github.com/OpenZeppelin/zeppelin-solidity/contracts/access/Roles.sol';
 
-contract ValidatorSet {
-    /// Issue this log event to signal a desired change in validator set.
-    /// This will not lead to a change in active validator set until
-    /// finalizeChange is called.
-    ///
-    /// Only the last log event of any block can take effect.
-    /// If a signal is issued while another is being finalized it may never
-    /// take effect.
-    ///
-    /// _parent_hash here should be the parent block hash, or the
-    /// signal will not be recognized.
-    event InitiateChange(bytes32 indexed _parent_hash, address[] _new_set);
-
-    /// Get current validator set (last enacted or initial if no changes ever made)
-    function getValidators() public view; //returns (address[] _validators);
-
-    /// Called when an initiated change reaches finality and is activated.
-    /// Only valid when msg.sender == SUPER_USER (EIP96, 2**160 - 2)
-    ///
-    /// Also called when the contract is first enabled for consensus. In this case,
-    /// the "change" finalized is the activation of the initial set.
-    function finalizeChange() public;
-}
-
 contract QuorumProposal {
     function onCarried(address carrying_quorum) public;
+    function kill() public { selfdestruct(msg.sender); }
 }
 
 // We use a smart contract which we delegate to as a proposal
@@ -47,6 +24,7 @@ contract Quorum {
     //
     // Basic checks
     //
+    function voterCount() public view returns (uint) { return voter_count; }
     function isVoter(address addr) public view returns (bool) { return voters[addr]; }
     function votedOn(address addr, address proposal) public view returns (bool) { return voted_on[addr][proposal]; }
     function votesFor(address proposal) public view returns (uint) { return proposal_votes[proposal]; }
@@ -72,8 +50,7 @@ contract Quorum {
     function addVoterOp(address addr) private {
         voter_count = SafeMath.add(voter_count, 1);
         voters[addr] = true; 
-        emit voterStatusChanged(addr, true); 
-        
+        emit voterStatusChanged(addr, true);
     }
     // Even when removed, the voter gets to keep their votes. It also keeps the has voted flag
     function removeVoterOp(address addr) private { 
@@ -100,7 +77,10 @@ contract Quorum {
         QuorumProposal(proposal).onCarried(address(this));
     }
     function uncarryOp(address proposal) private {
+        // Reentrancy protection
+        // Yields a false positive, but this order is ok
         passed[proposal] = false;
+        QuorumProposal(proposal).kill();
         emit uncarried(proposal);
     }
     
@@ -133,22 +113,39 @@ contract Quorum {
         require(quorumReached(proposal));
         carryOp(proposal);
     }
-    function resign() voterOnly public { removeVoterOp(msg.sender); }
+    function resign() voterOnly public {
+        removeVoterOp(msg.sender);
+    }
     
     //
     // Passed functions
     //
-    function addVoter(address addr) public passedOnly { addVoterOp(addr); }
-    function removeVoter(address addr) public passedOnly { removeVoterOp(addr); }
-    function setQuorum(uint new_per360_quorum) public passedOnly { per360_quorum = new_per360_quorum; }
-    function finish(address addr) public passedOnly { uncarryOp(addr); }
-    function transfer(address payable addr, uint256 amount) public passedOnly { addr.transfer(amount); }
-    function kill() public passedOnly { selfdestruct(msg.sender); }
-    
-    constructor (address founder) internal {
+    function addVoter(address addr) public passedOnly { 
+        if (!isVoter(addr))
+            addVoterOp(addr); 
+    }
+    function removeVoter(address addr) public passedOnly {
+        if (isVoter(addr))
+            removeVoterOp(addr); 
+    }
+    function setQuorum(uint new_per360_quorum) public passedOnly { 
+        per360_quorum = new_per360_quorum;
+    }
+    function finish(address addr) public passedOnly { 
+        if (isPassed(addr))
+            uncarryOp(addr);
+    }
+    function transfer(address payable addr, uint256 amount) public passedOnly { 
+        addr.transfer(amount);
+    }
+    function kill() public passedOnly { 
+        selfdestruct(msg.sender);
+    }
+    constructor (address founder) public {
         addVoterOp(founder);
     }
 }
+
 
 contract SimpleQuorumProposal is QuorumProposal {
     function body(Quorum carrying_quorum) public;
@@ -157,7 +154,5 @@ contract SimpleQuorumProposal is QuorumProposal {
         Quorum q = Quorum(carrying_quorum);
         body(q);
         q.finish(address(this));
-        selfdestruct(msg.sender);
     }
 }
-
