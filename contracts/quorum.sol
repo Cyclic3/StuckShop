@@ -1,7 +1,6 @@
 pragma solidity ^0.5.7;
 
 import 'github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol';
-import 'github.com/OpenZeppelin/zeppelin-solidity/contracts/access/Roles.sol';
 
 contract QuorumProposal {
     function onCarried(address carrying_quorum) public;
@@ -111,6 +110,8 @@ contract Quorum {
     }
     function carry(address proposal) public {
         require(quorumReached(proposal));
+        // Stop multicalling
+        require(!isPassed(proposal));
         carryOp(proposal);
     }
     function resign() voterOnly public {
