@@ -1,4 +1,4 @@
-pragma solidity ^0.5.7;
+pragma solidity ^0.5.0;
 
 import './quorum.sol';
 
@@ -34,7 +34,7 @@ contract Cabal is Quorate(Quorum(address(69))), ValidatorSet {
     address[] private validators = new address[](0x00e4471011ba22cb185ec72a3acc5a57fdb48bf79a);
     address constant SUPER_USER = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
     
-    function setValidators(address[] memory addr) public onlyPassed {
+    function setValidators(address[] memory addr) public quorate {
         validators = addr;
         emit InitiateChange(blockhash(block.number - 1), validators);
     }

@@ -1,10 +1,10 @@
-pragma solidity ^0.5.7;
+pragma solidity ^0.5.0;
 
 //import 'https://github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol';
 import './SafeMath.sol';
 
-contract QuorumProposal {
-    function onCarried(address carrying_quorum) public;
+contract QuorumProposalBase {
+    function onSupposedlyCarried() public;
 }
 
 // We use a smart contract which we delegate to as a proposal
@@ -48,10 +48,10 @@ contract Quorum {
     //
     // Events
     //
-    event voterStatusChanged(address addr, bool isVoter);
-    event voted(address addr, address proposal);
-    event unvoted(address addr, address proposal);
-    event carried(address proposal);
+    event voterStatusChanged(address indexed addr, bool isVoter);
+    event voted(address indexed addr, address indexed proposal);
+    event unvoted(address indexed addr, address indexed proposal);
+    event carried(address indexed proposal);
     
     //
     // Basic ops
@@ -85,7 +85,7 @@ contract Quorum {
     function carryOp(address proposal) private {
         passed[proposal] = true;
         emit carried(proposal);
-        QuorumProposal(proposal).onCarried(address(this));
+        QuorumProposalBase(proposal).onSupposedlyCarried();
     }
     
     //
@@ -158,10 +158,33 @@ contract Quorum {
 contract Quorate {
     Quorum public quorum;
     
-    modifier onlyPassed() { require(quorum.isPassed(msg.sender)); _; }
+    modifier quorate() { require(quorum.isPassed(msg.sender)); _; }
     
-    function changeQuorum(Quorum new_quorum) public onlyPassed { quorum = new_quorum; }
+    function changeQuorum(Quorum new_quorum) public quorate { quorum = new_quorum; }
     
     constructor(Quorum initial_quorum) public { quorum = initial_quorum; }
 }
 
+contract QuorumProposal is QuorumProposalBase {
+    address public quorum;
+    
+    function onCarried() private;
+    
+    function onSupposedlyCarried() public {
+        require(msg.sender == quorum);
+        onCarried();
+    }
+    
+    constructor(address target) public { quorum = target; }
+}
+
+contract SimpleQuorumProposal is QuorumProposal {
+    function body() private;
+    
+    function onCarried() private {
+        body();
+        selfdestruct(msg.sender);
+    }
+    
+    constructor(address parent) public QuorumProposal(parent) {}
+}
