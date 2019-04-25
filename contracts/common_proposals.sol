@@ -52,8 +52,14 @@ contract TransferQuorumProposal is SimpleQuorumProposal {
 }
 
 contract CommonQuorumProposalFactory {
-    function transferProposal(address payable receiver, uint256 amount) public returns (QuorumProposal) {
-        return new TransferQuorumProposal(receiver, amount);
+    function killProposal() public returns (QuorumProposal) {
+        return new KillQuorumProposal();
+    }
+    function addVoterProposal(address target) public returns (QuorumProposal) {
+        return new AddVoterQuorumProposal(target);
+    }
+    function removeVoterProposal(address target) public returns (QuorumProposal) {
+        return new RemoveVoterQuorumProposal(target);
     }
     function transferProposal(address payable receiver, uint256 amount) public returns (QuorumProposal) {
         return new TransferQuorumProposal(receiver, amount);

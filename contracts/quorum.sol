@@ -1,6 +1,7 @@
 pragma solidity ^0.5.7;
 
-import 'github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol';
+//import 'https://github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol';
+import './SafeMath.sol';
 
 contract QuorumProposal {
     function onCarried(address carrying_quorum) public;
@@ -8,10 +9,10 @@ contract QuorumProposal {
 
 // We use a smart contract which we delegate to as a proposal
 // This ensures security as well as complete flexibilty as to the effect of the proposal
-//
-// 360 is used as the divisor, as it is highly composite
 contract Quorum {
-    uint private per360_quorum = 180;
+    // A highly composite number
+    uint private quorum_numerator = 1;
+    uint private quorum_denominator = 2;
     uint private voter_count;
     mapping(address => bool) private voters;
     mapping(address => uint) private proposal_votes;
@@ -26,11 +27,23 @@ contract Quorum {
     function isVoter(address addr) public view returns (bool) { return voters[addr]; }
     function votedOn(address addr, address proposal) public view returns (bool) { return voted_on[addr][proposal]; }
     function votesFor(address proposal) public view returns (uint) { return proposal_votes[proposal]; }
+    function quorumThreshold() public view returns (uint) {
+        return SafeMath.div(SafeMath.mul(voter_count, quorum_numerator), quorum_denominator);
+    }
     function quorumReached(address proposal) public view returns (bool) { 
-        uint per360_in_favour = SafeMath.div(SafeMath.mul(360, votesFor(proposal)), voter_count);
-        return per360_in_favour > per360_quorum;
+        return votesFor(proposal) > quorumThreshold();
     }
     function isPassed(address proposal) public view returns (bool) { return passed[proposal]; }
+    function quorumNumerator(address) public view returns (uint) { return quorum_numerator; }
+    function quorumDenominator(address) public view returns (uint) { return quorum_denominator; }
+    function isQuorumPossible() public view returns (bool) { 
+        if (quorum_denominator == 0)
+            return false;
+        
+        uint res = voter_count * quorum_numerator;
+        
+        return res / quorum_numerator == voter_count;
+    }
     
     //
     // Events
@@ -109,6 +122,12 @@ contract Quorum {
     function resign() voterOnly public {
         removeVoterOp(msg.sender);
     }
+    /// Used if for some reason a proposal breaks the quorum calculation
+    function fixQuorum() voterOnly public {
+        require(!isQuorumPossible());
+        quorum_numerator = 1;
+        quorum_denominator = 2;
+    }
     
     //
     // Passed functions
@@ -121,8 +140,9 @@ contract Quorum {
         if (isVoter(addr))
             removeVoterOp(addr); 
     }
-    function setQuorum(uint new_per360_quorum) public passedOnly { 
-        per360_quorum = new_per360_quorum;
+    function setQuorum(uint numerator, uint denominator) public passedOnly { 
+        quorum_numerator = numerator;
+        quorum_denominator = denominator;
     }
     function transfer(address payable addr, uint256 amount) public passedOnly { 
         addr.transfer(amount);
@@ -134,3 +154,14 @@ contract Quorum {
         addVoterOp(founder);
     }
 }
+
+contract Quorate {
+    Quorum public quorum;
+    
+    modifier onlyPassed() { require(quorum.isPassed(msg.sender)); _; }
+    
+    function changeQuorum(Quorum new_quorum) public onlyPassed { quorum = new_quorum; }
+    
+    constructor(Quorum initial_quorum) public { quorum = initial_quorum; }
+}
+
