@@ -2,6 +2,16 @@ pragma solidity ^0.5.7;
 
 import './quorum.sol';
 
+contract SimpleQuorumProposal is QuorumProposal {
+    function body(Quorum carrying_quorum) public;
+    
+    function onCarried(address carrying_quorum) public {
+        Quorum q = Quorum(carrying_quorum);
+        body(q);
+        selfdestruct(msg.sender);
+    }
+}
+
 contract KillQuorumProposal is SimpleQuorumProposal {
     function body(Quorum carrying_quorum) public {
         carrying_quorum.kill();
@@ -38,5 +48,14 @@ contract TransferQuorumProposal is SimpleQuorumProposal {
     constructor(address payable receiver, uint256 amount) public { 
         target = receiver;
         value = amount;
+    }
+}
+
+contract CommonQuorumProposalFactory {
+    function transferProposal(address payable receiver, uint256 amount) public returns (QuorumProposal) {
+        return new TransferQuorumProposal(receiver, amount);
+    }
+    function transferProposal(address payable receiver, uint256 amount) public returns (QuorumProposal) {
+        return new TransferQuorumProposal(receiver, amount);
     }
 }

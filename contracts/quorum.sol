@@ -4,7 +4,6 @@ import 'github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol';
 
 contract QuorumProposal {
     function onCarried(address carrying_quorum) public;
-    function kill() public { selfdestruct(msg.sender); }
 }
 
 // We use a smart contract which we delegate to as a proposal
@@ -40,7 +39,6 @@ contract Quorum {
     event voted(address addr, address proposal);
     event unvoted(address addr, address proposal);
     event carried(address proposal);
-    event uncarried(address proposal);
     
     //
     // Basic ops
@@ -69,18 +67,12 @@ contract Quorum {
         voted_on[addr][proposal] = false;
         emit unvoted(addr, proposal);
     }
-    /// XXX: does not check whether quorum has been reached
+    /// XXX: does not check whether quorum has been reached,
+    /// or if it has already been passed 
     function carryOp(address proposal) private {
         passed[proposal] = true;
         emit carried(proposal);
         QuorumProposal(proposal).onCarried(address(this));
-    }
-    function uncarryOp(address proposal) private {
-        // Reentrancy protection
-        // Yields a false positive, but this order is ok
-        passed[proposal] = false;
-        QuorumProposal(proposal).kill();
-        emit uncarried(proposal);
     }
     
     //
@@ -132,10 +124,6 @@ contract Quorum {
     function setQuorum(uint new_per360_quorum) public passedOnly { 
         per360_quorum = new_per360_quorum;
     }
-    function finish(address addr) public passedOnly { 
-        if (isPassed(addr))
-            uncarryOp(addr);
-    }
     function transfer(address payable addr, uint256 amount) public passedOnly { 
         addr.transfer(amount);
     }
@@ -144,16 +132,5 @@ contract Quorum {
     }
     constructor (address founder) public {
         addVoterOp(founder);
-    }
-}
-
-
-contract SimpleQuorumProposal is QuorumProposal {
-    function body(Quorum carrying_quorum) public;
-    
-    function onCarried(address carrying_quorum) public {
-        Quorum q = Quorum(carrying_quorum);
-        body(q);
-        q.finish(address(this));
     }
 }
