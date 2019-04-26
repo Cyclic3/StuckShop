@@ -2,12 +2,89 @@ pragma solidity ^0.5.0;
 
 import './quorum.sol';
 
+contract ElectoralCouncil is Quorate {
+    mapping (address => bool) private is_on_roll;
+    uint term_length_blocks;
+    
+    event voterAdded(address indexed voter);
+    event voterRemoved(address indexed voter);
+    
+    function termLength() public view returns (uint) {
+        return term_length_blocks;
+    }
+    
+    function isRegistered(address voter) public view returns (bool) {
+        return is_on_roll[voter];
+    }
+    
+    function setTermLength(uint length_blocks) public quorate {
+        term_length_blocks = length_blocks;
+    }
+    
+    function register(address voter) public quorate returns (bool) {
+        if (isRegistered(voter)) return false;
+        is_on_roll[voter] = true;
+        emit voterAdded(voter);
+        return true;
+    }
+    
+    function unregister(address voter) public quorate returns (bool) {
+        if (!isRegistered(voter)) return false;
+        is_on_roll[voter] = false;
+        emit voterRemoved(voter);
+        return true;
+    }
+    
+    constructor(Quorum council) public Quorate(council) {}
+}
+
+contract ElectoralCouncilAddVotersProposal is SimpleQuorumProposal {
+    address[] targets;
+    
+    function body() private {
+        ElectoralCouncil council = ElectoralCouncil(quorum);
+        for (uint i = 0; i < targets.length; ++i)
+            council.register(targets[i]);
+    }
+    
+    constructor(address council, address[] memory voters) public SimpleQuorumProposal(council) {
+        targets = voters;
+    }
+}
+
+contract ElectoralCouncilRemoveVotersProposal is SimpleQuorumProposal {
+    address[] targets;
+    
+    function body() private {
+        ElectoralCouncil council = ElectoralCouncil(quorum);
+        for (uint i = 0; i < targets.length; ++i)
+            council.unregister(targets[i]);
+    }
+    
+    constructor(address council, address[] memory voters) public SimpleQuorumProposal(council) {
+        targets = voters;
+    }
+}
+
+contract ElectoralCouncilSetTermLengthProposal is SimpleQuorumProposal {
+    uint new_length_blocks;
+    
+    function body() private {
+        ElectoralCouncil council = ElectoralCouncil(quorum);
+        council.setTermLength(new_length_blocks);
+    }
+    
+    constructor(address council, uint length_blocks) public SimpleQuorumProposal(council) {
+        new_length_blocks = length_blocks;
+    }
+}
+
 /// A token-based first-past-the-post election system
 contract ElectionToken {
     mapping (address => uint256) private balances;
     uint256 public totalSupply;
     address election;
-    mapping (address => bool) private is_registered;
+    ElectoralCouncil council;
     
     string public constant name = "Election Token";
     string public constant symbol = "ELCTN";
@@ -38,9 +115,9 @@ contract ElectionToken {
         emit Transfer(msg.sender, to, value);
     }
     
-    modifier electionFixing() { require(msg.sender == election); _; }
+    modifier ownerOnly() { require(msg.sender == election); _; }
     
-    function kill() public electionFixing {
+    function kill() public ownerOnly {
         selfdestruct(msg.sender);
     }
     
@@ -48,40 +125,38 @@ contract ElectionToken {
         return balances[candidate] > totalSupply / 2;
     }
     
-    function isRegistered(address voter) public view returns (bool) {
-        return is_registered[voter];
-    }
-    
     function registerOp(address voter) private {
-        is_registered[voter] = true;
         balances[voter] = 1;
         emit Transfer(address(this), voter, 1);
     }
     
-    function tryRegister(address voter) public electionFixing returns (bool) {
-        if (isRegistered(voter)) return false;
+    function tryRegister(address voter) public returns (bool) {
+        if (council.isRegistered(voter)) return false;
         
         registerOp(voter);
         
         return true;
     }
     
-    function register(address voter) public electionFixing {
-        require(!isRegistered(voter));
+    function register(address voter) public {
+        require(!council.isRegistered(voter));
         registerOp(voter);
     }
     
-    constructor(address owner) public { election = owner; }
+    constructor(address owner, ElectoralCouncil controlling_council) public { 
+        council = controlling_council;
+        election = owner; 
+    }
 }
 
 /// XXX: Make sure that you pass the Election before running, or it won't work after you win
 contract Election is Quorate, QuorumProposal {
     Quorate parliament;
+    ElectoralCouncil council = new ElectoralCouncil(Quorum(quorum));
     
-    uint private last_election_timestamp;
-    uint private term_length_seconds;
+    uint private last_election_block;
     
-    ElectionToken currentBallot;
+    ElectionToken private current_ballot;
     
     event elected(address indexed);
     
@@ -89,7 +164,13 @@ contract Election is Quorate, QuorumProposal {
     // Views
     //
     function canElect() public view returns (bool) { 
-        return block.timestamp >= (last_election_timestamp + term_length_seconds);
+        return block.timestamp >= (last_election_block + council.termLength());
+    }
+    function currentBallot() public view returns (ElectionToken) {
+        return current_ballot;
+    }
+    function electoralCouncil() public view returns (ElectoralCouncil) {
+        return council;
     }
     
     //
@@ -101,27 +182,15 @@ contract Election is Quorate, QuorumProposal {
     }
     
     //
-    // Ops
-    //
-    
-    //
     // Restricted functions
     //
     function coup() public quorate {
         selfdestruct(msg.sender);
     }
     /// Resets the election
-    function itsNotFair() public quorate() {
-        currentBallot = new ElectionToken(address(this));
-    }
-    function register(address voter) public quorate {
-        currentBallot.register(voter);
-    }
-    function tryRegister(address voter) public quorate {
-        currentBallot.tryRegister(voter);
-    }
-    function changeTermLength(uint newLength) public quorate {
-        term_length_seconds = newLength;
+    function itsNotFair() public quorate {
+        current_ballot.kill();
+        current_ballot = new ElectionToken(address(this), council);
     }
     
     //
@@ -130,23 +199,13 @@ contract Election is Quorate, QuorumProposal {
     function declareVictory() public {
         // Check if it is time to pass another election
         require(canElect());
-        require(currentBallot.hasWon(msg.sender));
+        require(current_ballot.hasWon(msg.sender));
         parliament.changeQuorum(Quorum(msg.sender));
-        currentBallot.kill();
-        currentBallot = new ElectionToken(address(this));
+        itsNotFair();
     }
     
     //
     // Interface
     //
-    function onCarried(address) public {}
-}
-contract ElectoralRoll is SimpleQuorumProposal {
-    address[] newVoters;
-    
-    function body() private {
-        Election election = Election(quorum);
-        for (uint i = 0; i < newVoters.length; ++i)
-            election.tryRegister(newVoters[i]);
-    }
+    function onCarried() private {}
 }
