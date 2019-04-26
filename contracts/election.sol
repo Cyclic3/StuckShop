@@ -120,6 +120,9 @@ contract Election is Quorate, QuorumProposal {
     function tryRegister(address voter) public quorate {
         currentBallot.tryRegister(voter);
     }
+    function changeTermLength(uint newLength) public quorate {
+        term_length_seconds = newLength;
+    }
     
     //
     // Public functions
