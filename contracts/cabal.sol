@@ -27,16 +27,16 @@ contract ValidatorSet {
 }
 
 /// XXX: must be at address 69
-contract CabalQuorum is Quorum(address(0x00e4471011ba22cb185ec72a3acc5a57fdb48bf79a)) {}
+contract CabalQuorum is Quorum(0xC75E73b6f5d324D16b82c82e20Bf4FD423CFa740) {}
 
 /// XXX: must be at address 420
 contract Cabal is Quorate(Quorum(address(69))), ValidatorSet {
-    address[] private validators = new address[](0x00e4471011ba22cb185ec72a3acc5a57fdb48bf79a);
+    address[] private validators;
     address constant SUPER_USER = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
     
     function setValidators(address[] memory addr) public quorate {
         validators = addr;
-        emit InitiateChange(blockhash(block.number - 1), validators);
+        emit InitiateChange(blockhash(block.number), validators);
     }
     
     function getValidators() public view returns (address[] memory _validators) {
@@ -46,5 +46,10 @@ contract Cabal is Quorate(Quorum(address(69))), ValidatorSet {
     function finalizeChange() public { 
         require(msg.sender == SUPER_USER); 
         return;
+    }
+    
+    constructor() public {
+        validators.push(0xC75E73b6f5d324D16b82c82e20Bf4FD423CFa740);
+        emit InitiateChange(blockhash(block.number), validators);
     }
 }
