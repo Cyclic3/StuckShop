@@ -1,7 +1,7 @@
 [parity]
 chain = "../blockchain/config.json"
 [network]
-bootnodes = ["enode://8d7f8af7e05412ca4ecb0220712e851a227b6792d19f08eb5e54a9745b1d45c8014ea690bfc6caeb3e503f576a8a18caa7ac861ad966a495cb95bf39e81a54ed@10.0.0.123:30300"]
+bootnodes = ["enode://8d7f8af7e05412ca4ecb0220712e851a227b6792d19f08eb5e54a9745b1d45c8014ea690bfc6caeb3e503f576a8a18caa7ac861ad966a495cb95bf39e81a54ed@ats.harlanconnor.com:30300"]
 [rpc]
 port = 8545
 apis = ["all"]
