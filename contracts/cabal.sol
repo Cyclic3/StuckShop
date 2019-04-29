@@ -44,7 +44,7 @@ contract Cabal is Quorate(Quorum(address(69))), ValidatorSet {
     }
     
     function finalizeChange() public { 
-        require(msg.sender == SUPER_USER); 
+        //require(msg.sender == SUPER_USER); 
         return;
     }
     
