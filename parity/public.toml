@@ -1,0 +1,19 @@
+# This config should be placed in following path:
+#   ~/.local/share/io.parity.ethereum/config.toml
+
+[parity]
+# Custom chain
+chain = "../blockchain/config.json"
+
+[network]
+# Parity will listen for connections on port 30302.
+port = 30302
+
+[rpc]
+# JSON-RPC over HTTP will be accessible on port 42000.
+port = 42000
+#  JSON-RPC will be listening for connections on IP 0.0.0.0.
+interface = "0.0.0.0"
+
+[websockets]
+disable = true

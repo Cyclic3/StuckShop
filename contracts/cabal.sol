@@ -27,7 +27,7 @@ contract ValidatorSet {
 }
 
 /// XXX: must be at address 69
-contract CabalQuorum is Quorum(0xC75E73b6f5d324D16b82c82e20Bf4FD423CFa740) {}
+contract CabalQuorum is Quorum(0xa7bbC45cAA1267C3BF235073Ae85635f779Fc059) {}
 
 /// XXX: must be at address 420
 contract Cabal is Quorate(Quorum(address(69))), ValidatorSet {
@@ -49,7 +49,7 @@ contract Cabal is Quorate(Quorum(address(69))), ValidatorSet {
     }
     
     constructor() public {
-        validators.push(0xC75E73b6f5d324D16b82c82e20Bf4FD423CFa740);
+        validators.push(0xa7bbC45cAA1267C3BF235073Ae85635f779Fc059);
         emit InitiateChange(blockhash(block.number), validators);
     }
 }
