@@ -10,7 +10,7 @@
   "engine": {
     "clique": {
       "params": {
-        "period": 3,
+        "period": 1,
         "epoch": 30000
       }
     }
